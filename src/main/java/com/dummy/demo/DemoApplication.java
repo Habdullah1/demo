@@ -2,7 +2,6 @@ package com.dummy.demo;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -36,7 +35,6 @@ public class DemoApplication {
 		headersMap.put("set-cookie", "edgebucket=OXiitxTkDk5fDo5UpN; Domain=reddit.com; Max-Age=63071999; Path=/;  secure");
 		headersMap.put("strict-transport-security", "max-age=15552000; includeSubDomains; preload");
 		headersMap.put("server", "snooserv");
-		headersMap.put("content-length", "122");
 
 	}
 
@@ -48,7 +46,10 @@ public class DemoApplication {
 			String body = "{\"access_token\": \"1578141871049-Aepb0E2P3YWz3jPiN0AjidEfQti0Lw\", \"token_type\": \"bearer\", \"expires_in\": 3600, \"scope\": \"*\"}";
 			System.out.println("Got Request");
 			return ResponseEntity.ok()
-					.headers(c -> headersMap.forEach(c::add))
+					.headers(c -> {
+						headersMap.forEach(c::add);
+						c.add("content-length", "122");
+					})
 					.body(body);
 		}
 
@@ -58,18 +59,30 @@ public class DemoApplication {
 			StringBuilder sb = new StringBuilder();
 			try {
 				byte[] bytes = Objects.requireNonNull(input).readAllBytes();
-				System.out.println("NUmber of bytes = " + bytes.length);
-				for (byte aByte : bytes) {
+				System.out.println("Number of bytes = " + bytes.length);
+				for (int i = 0; i < bytes.length; i++) {
+					if (i == 120 || i == 121 || i == 122 || i == 123) {
+						System.out.printf("%d char is %c\n", bytes[i], (char) bytes[i]);
+					}
+					byte aByte = bytes[i];
 					sb.append((char) aByte);
 				}
+
 			} catch (IOException e) {
 				e.printStackTrace();
+			} finally {
+				try {
+					Objects.requireNonNull(input).close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 			}
 
 			ResponseEntity<String> body = ResponseEntity.ok()
 					.headers(c -> headersMap.forEach(c::add))
 					.body(sb.toString());
 			System.out.println(body);
+
 			return body;
 		}
 	}
