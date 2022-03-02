@@ -3,12 +3,20 @@ package com.dummy.demo;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -84,6 +92,47 @@ public class DemoApplication {
 			System.out.println(body);
 
 			return body;
+		}
+
+		@PostMapping("/api/v1/access_token")
+		public String logRequest() {
+
+			return "{\"x\":\"hello\"}";
+
+		}
+
+		public class CustomInterceptor extends HandlerInterceptorAdapter {
+			@Override
+			public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object Handler) {
+				Enumeration<String> headerNames = request.getHeaderNames();
+				while(headerNames.hasMoreElements()) {
+					String headerName = headerNames.nextElement();
+					System.out.printf("%s : %s\n", headerName, request.getHeader(headerName));
+				}
+				try {
+					BufferedReader reader = request.getReader();
+					int c = 0;
+					StringBuilder sb = new StringBuilder();
+					while ((c = reader.read()) != -1) {
+						sb.append((char) c);
+					}
+					System.out.println(sb);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				return true;
+			}
+
+		}
+
+		@Component
+		public class CustomMvcConfig implements WebMvcConfigurer {
+			@Override
+			public void addInterceptors(InterceptorRegistry registry) {
+				registry.addInterceptor(new CustomInterceptor())
+						.addPathPatterns("/api/v1/access_token");
+			}
+
 		}
 	}
 
